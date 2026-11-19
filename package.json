@@ -1,6 +1,6 @@
 {
   "name": "gitlab-jira-bridge",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "Turns GitLab merge-request events into Jira labels and comments: needs-review, reviewer-<name>, approved, merged, and a branch-name comment.",
   "repository": {
     "type": "git",

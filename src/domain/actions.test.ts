@@ -157,6 +157,25 @@ describe('planActions', () => {
     expect(comment.text).toMatch(/^✅ Merged: `feature\/abc-123` → `main` as `deadbeefcafe`/);
   });
 
+  it('treats action "approved" (GitLab 16+, no approval webhook) as approved', () => {
+    const plan = planActions(payload({ action: 'approved' }), config);
+    const labels = plan.actions.find((a) => a.kind === 'labels')! as { add: string[]; remove: string[]; id: string };
+    expect(labels.add).toEqual(['approved']);
+    expect(labels.remove).toEqual(['needs-review']);
+    expect(labels.id).toBe('900:approved');
+  });
+
+  it('treats action "unapproved" as the approval withdrawn', () => {
+    const plan = planActions(
+      payload({ action: 'unapproved', reviewers: [{ username: 'simone' }] }),
+      config,
+    );
+    const labels = plan.actions.find((a) => a.kind === 'labels')! as { add: string[]; remove: string[]; id: string };
+    expect(labels.add).toEqual(['needs-review']);
+    expect(labels.remove).toEqual(['approved']);
+    expect(labels.id).toBe('900:unapproved');
+  });
+
   it('approval adds approved and removes needs-review', () => {
     const plan = planActions(
       payload({ event_type: 'approval', approval: { approved: true } }),

@@ -4,6 +4,19 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.5.2] — 2026-11-19
+
+### Added
+
+- **`approved` on GitLab versions without an approval webhook.** Current GitLab
+  sends the approval as an ordinary merge-request event with
+  `action: "approved"` (and `"unapproved"`), which the planner used to record as
+  `action "approved" not mapped`. Approving now adds `labels.approved` and
+  removes `needs-review`; unapproving removes it and puts `needs-review` back
+  when reviewers are still assigned. The older dedicated
+  `event_type: "approval"` shape keeps working. The missing-key note never fires
+  on either shape.
+
 ## [0.5.1] — 2026-11-19
 
 ### Fixed

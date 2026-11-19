@@ -109,8 +109,14 @@ export function planActions(payload: MergeRequestPayload, config: Config): PlanR
   const changes = payload.changes ?? {};
   const branch = attrs.source_branch;
 
-  if (isApproval) {
-    const approved = payload.approval?.approved !== false;
+  // GitLab Cloud-era approval: either a dedicated approval event (older, handled
+  // above) or - on current versions, which have no approval webhook at all - an
+  // ordinary merge-request event whose `action` is approved/unapproved.
+  const approvedEvent = action === 'approved' || action === 'approval';
+  const unapprovedEvent = action === 'unapproved' || action === 'unapproval';
+
+  if (isApproval || approvedEvent) {
+    const approved = isApproval ? payload.approval?.approved !== false : true;
     if (approved) {
       actions.push({
         kind: 'labels',
@@ -120,6 +126,19 @@ export function planActions(payload: MergeRequestPayload, config: Config): PlanR
         remove: [config.labels.needs_review],
       });
     }
+    return { actions };
+  }
+
+  if (unapprovedEvent) {
+    // Withdrawing an approval puts the review back on the reviewers, if any.
+    const back = currentReviewers(payload).length > 0 ? [config.labels.needs_review] : [];
+    actions.push({
+      kind: 'labels',
+      id: `${mrId}:unapproved`,
+      key,
+      add: back,
+      remove: [config.labels.approved],
+    });
     return { actions };
   }
 
@@ -425,10 +444,10 @@ function missingKeyNote(
   resolution: Exclude<KeyResolution, { status: 'found' } | { status: 'foreign' }>,
 ): JiraAction | null {
   if (!config.behaviours.comment_on_missing_key) return null;
-  if (payload.event_type === 'approval') return null;
-
   const attrs = payload.object_attributes;
   const action = payload.action ?? attrs.action ?? '';
+  // Never on an approval in either shape: it is not news about the missing key.
+  if (payload.event_type === 'approval' || action === 'approved' || action === 'unapproved') return null;
   const changes = payload.changes ?? {};
   const relevant =
     action === 'open' || action === 'reopen' || (action === 'update' && ('title' in changes || 'description' in changes));
