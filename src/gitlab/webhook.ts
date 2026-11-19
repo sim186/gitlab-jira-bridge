@@ -97,24 +97,28 @@ export function parsePipelineEvent(body: unknown): PipelinePayload | null {
   return payload;
 }
 
-/** Reviewer usernames currently on the MR, from `reviewers` or the changes entry. */
-export function currentReviewers(payload: MergeRequestPayload): string[] {
-  if (Array.isArray(payload.reviewers)) {
-    return payload.reviewers.map((r) => r.username).filter((u): u is string => !!u);
-  }
-  const current = payload.changes?.reviewer?.current;
-  if (current && typeof current === 'object' && 'username' in current) {
-    const username = (current as { username?: string }).username;
-    return username ? [username] : [];
-  }
-  return [];
+/**
+ * The reviewer change entry of an update event. GitLab sends `changes.reviewers`
+ * (list of users) on current versions and `changes.reviewer` (single user) on
+ * older ones; both mean the same thing, so both are read.
+ */
+export function reviewerChange(changes: Record<string, ChangeEntry> | undefined): ChangeEntry | undefined {
+  return changes?.['reviewers'] ?? changes?.['reviewer'];
 }
 
-export function previousReviewers(payload: MergeRequestPayload): string[] {
-  const previous = payload.changes?.reviewer?.previous;
-  if (!previous) return [];
-  const list = Array.isArray(previous) ? previous : [previous];
+function usernames(value: unknown): string[] {
+  const list = Array.isArray(value) ? value : [value];
   return list
     .map((item) => (item && typeof item === 'object' ? (item as ReviewerUser).username : undefined))
     .filter((u): u is string => !!u);
+}
+
+/** Reviewer usernames currently on the MR, from `reviewers` or the changes entry. */
+export function currentReviewers(payload: MergeRequestPayload): string[] {
+  if (Array.isArray(payload.reviewers)) return usernames(payload.reviewers);
+  return usernames(reviewerChange(payload.changes)?.current);
+}
+
+export function previousReviewers(payload: MergeRequestPayload): string[] {
+  return usernames(reviewerChange(payload.changes)?.previous);
 }

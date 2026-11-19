@@ -73,6 +73,20 @@ describe('planActions', () => {
     );
   });
 
+  it('reacts to the reviewer list shape GitLab 19 sends (changes.reviewers)', () => {
+    const plan = planActions(
+      payload({
+        action: 'update',
+        changes: { reviewers: { previous: [], current: [{ username: 'simone' }] } },
+        reviewers: [{ username: 'simone' }],
+      }),
+      config,
+    );
+    const labels = plan.actions.find((a) => a.kind === 'labels')! as { add: string[]; remove: string[] };
+    expect(labels.add).toEqual(['reviewer-simone', 'needs-review']);
+    expect(labels.remove).toEqual([]);
+  });
+
   it('adds needs-review and reviewer label when reviewer set on update', () => {
     const plan = planActions(
       payload({

@@ -13,6 +13,7 @@ import { describeResolution, resolveJiraKey, type KeyOptions, type KeyResolution
 import {
   currentReviewers,
   previousReviewers,
+  reviewerChange,
   type ChangeEntry,
   type MergeRequestPayload,
   type PipelinePayload,
@@ -133,7 +134,7 @@ export function planActions(payload: MergeRequestPayload, config: Config): PlanR
       if (attrs.state !== 'merged' && attrs.state !== 'closed' && becameLinked(payload, config, key)) {
         actions.push(...openActions(payload, config, key));
       }
-      if ('reviewer' in changes) {
+      if (reviewerChange(changes)) {
         const now = currentReviewers(payload);
         const before = previousReviewers(payload);
         const joined = [...now].sort().join(',');

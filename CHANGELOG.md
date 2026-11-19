@@ -4,6 +4,16 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.5.1] — 2026-11-19
+
+### Fixed
+
+- **Reviewer changes were ignored on GitLab 16 and newer.** Those versions send
+  the change as `changes.reviewers` (a list of users); the bridge only looked at
+  `changes.reviewer` (a single user, the older shape), so assigning or removing a
+  reviewer planned nothing and `reviewer-<name>` was never written. Both shapes
+  are now read, `previousReviewers`/`currentReviewers` included.
+
 ## [0.5.0] — 2026-11-19
 
 ### Changed

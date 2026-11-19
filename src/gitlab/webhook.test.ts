@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { parseMergeRequestEvent, verifyToken } from './webhook.js';
+import { currentReviewers, parseMergeRequestEvent, previousReviewers, verifyToken } from './webhook.js';
+import type { MergeRequestPayload } from './webhook.js';
 
 const secret = 'test-secret-value';
 
@@ -43,5 +44,29 @@ describe('parseMergeRequestEvent', () => {
 
   it('ignores MR events without object_attributes.id', () => {
     expect(parseMergeRequestEvent({ object_kind: 'merge_request', object_attributes: {} })).toBeNull();
+  });
+});
+
+describe('reviewer changes', () => {
+  const mr = (changes: Record<string, unknown>, reviewers: { username: string }[]) =>
+    ({ object_attributes: {}, reviewers, changes }) as unknown as MergeRequestPayload;
+
+  it('reads the current GitLab shape: changes.reviewers with a list', () => {
+    // This is what GitLab 19 actually sends; the singular `reviewer` key is not used any more.
+    const payload = mr({ reviewers: { previous: [], current: [{ username: 'simone' }] } }, [{ username: 'simone' }]);
+    expect(currentReviewers(payload)).toEqual(['simone']);
+    expect(previousReviewers(payload)).toEqual([]);
+  });
+
+  it('reads the older shape: changes.reviewer with a single user', () => {
+    const payload = { object_attributes: {}, changes: { reviewer: { previous: { username: 'bob' }, current: { username: 'alice' } } } } as unknown as MergeRequestPayload;
+    expect(currentReviewers(payload)).toEqual(['alice']);
+    expect(previousReviewers(payload)).toEqual(['bob']);
+  });
+
+  it('reports removals from the list shape', () => {
+    const payload = { object_attributes: {}, changes: { reviewers: { previous: [{ username: 'bob' }], current: [] } } } as unknown as MergeRequestPayload;
+    expect(currentReviewers(payload)).toEqual([]);
+    expect(previousReviewers(payload)).toEqual(['bob']);
   });
 });
