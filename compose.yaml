@@ -1,0 +1,36 @@
+services:
+  bridge:
+    build: .
+    image: gitlab-jira-bridge:latest
+    restart: unless-stopped
+
+    # Secrets come from .env — see .env.example. config.yaml references them as ${VAR}.
+    # Put GJB_DRY_RUN=1 there to plan and audit without writing to Jira.
+    env_file: [.env]
+
+    ports:
+      # Published to loopback only. GitLab must reach /webhook over HTTPS, so put
+      # a reverse proxy (with server.trust_proxy: true) in front of this.
+      - '127.0.0.1:8090:8090'
+
+    volumes:
+      # Read-only: the application never writes its config file.
+      - ./config.yaml:/app/config/config.yaml:ro
+      # state.json (dedup) and audit.jsonl (audit trail).
+      - bridge-data:/app/data
+
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:8090/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  bridge-data:

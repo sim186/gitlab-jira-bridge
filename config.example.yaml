@@ -1,0 +1,71 @@
+# Values written as ${VAR} or ${VAR:-default} are read from the environment
+# (see .env.example), so the secrets can stay out of this file.
+
+server:
+  host: 127.0.0.1                      # the Docker image overrides this via GJB_HOST=0.0.0.0
+  port: 8090
+  trust_proxy: false                   # true behind a reverse proxy, so the audit logs the real IP
+
+# GitLab config (only used to render links inside Jira comments)
+gitlab:
+  url: https://gitlab.example.com
+  webhook_secret: ${GITLAB_WEBHOOK_SECRET}   # min 8 chars
+  token: ${GITLAB_TOKEN:-}             # only for comment_on_missing_key; bot user, api scope, Reporter
+
+# Jira Cloud
+jira:
+  base_url: https://your-org.atlassian.net
+  email: ${JIRA_EMAIL}                 # bot account email (Basic auth user)
+  api_token: ${JIRA_API_TOKEN}         # Jira API token for that account
+  key_regex: '\b([A-Z][A-Z0-9]+-\d+)\b'
+  key_ignore_regex: '^(TODO-\d+|DONE-\d+)$'   # strings that look like keys but are not
+  project_keys: []                     # e.g. [ABC, XYZ]: match keys in any case (feature/abc-1-x), only these projects
+  other_project_keys: []               # e.g. [XYZ, DEF]: real projects we do not act on - their keys
+                                       # are skipped silently, never called "not linked to Jira"
+
+# Labels written to the ticket. Empty string disables that label.
+labels:
+  needs_review: needs-review
+  reviewer_prefix: reviewer-           # becomes reviewer-<gitlab-username>
+  approved: approved
+  merged: merged
+  closed: ''                           # e.g. mr-closed if you want close events too
+  conflict: blocked-by-conflict        # merge conflict appeared / resolved
+  draft: draft                         # author marked it draft (or WIP: in title)
+  ci_failing: ci-failing               # head pipeline failed; removed on success
+
+behaviours:
+  comment_on_open: true                # "opened from `branch` into `main`: <link>"
+  comment_on_merge: true               # "merged into `main` as `sha` (branch `x`)"
+  comment_on_reviewer: false           # extra comment when a reviewer is assigned
+  reviewer_labels: true                # needs-review + reviewer-<name> labels
+  conflict_labels: true                # blocked-by-conflict on merge_status transitions
+  draft_labels: true                   # draft label on draft/WIP toggles
+  ci_fail_labels: true                 # ci-failing on failed pipelines only
+  comment_on_missing_key: false        # comment once on MRs with no single Jira key (needs gitlab.token)
+  dry_run: true                        # start in dry-run; logs instead of writing
+
+# MRs that legitimately have no ticket never get the missing-key comment.
+missing_key:
+  skip_authors: []                     # e.g. [renovate-bot]
+  skip_branches: []                    # source-branch prefixes, e.g. [renovate/, release/]
+
+# Append-only trail of every delivery and every Jira write (or why there was none).
+# Read it with: node dist/cli.js audit --key ABC-123
+audit:
+  enabled: true
+  file: ./data/audit.jsonl
+  retention_days: 90                   # pruned at startup and daily; 0 keeps everything
+  record_skipped: true                 # also log deliveries that planned nothing, with the reason
+
+# Jira writes happen in the background from a queue on disk; transient failures
+# (5xx, 429, network) are retried with exponential backoff.
+retry:
+  max_attempts: 12                     # then recorded as "abandoned" (replayable)
+  base_delay_seconds: 30               # 30s, 1m, 2m, 4m, …
+  max_delay_seconds: 3600              # cap between attempts
+  queue_file: ./data/queue.json
+  inbox_dir: ./data/inbox              # where `bridge replay` hands requests to the server
+
+state_file: ./data/state.json          # dedup memory across restarts
+log_level: info

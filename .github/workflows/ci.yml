@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t gitlab-jira-bridge:ci .
+      - name: Start the image and check /healthz
+        run: |
+          cat > ci-config.yaml <<'YAML'
+          gitlab:
+            url: https://gitlab.example.com
+            webhook_secret: ${GITLAB_WEBHOOK_SECRET}
+          jira:
+            base_url: https://jira.example.com
+            email: ci@example.com
+            api_token: ${JIRA_API_TOKEN}
+          behaviours:
+            dry_run: true
+          YAML
+          docker run -d --name bridge -p 8090:8090 \
+            -e GITLAB_WEBHOOK_SECRET=ci-secret-value -e JIRA_API_TOKEN=unused \
+            -v "$PWD/ci-config.yaml:/app/config/config.yaml:ro" \
+            gitlab-jira-bridge:ci
+          for i in $(seq 30); do
+            if curl -sf http://127.0.0.1:8090/healthz; then echo; exit 0; fi
+            sleep 1
+          done
+          docker logs bridge
+          exit 1
+      - name: Check the container reports healthy
+        run: |
+          for i in $(seq 30); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' bridge)
+            echo "health: $status"
+            [ "$status" = healthy ] && exit 0
+            sleep 2
+          done
+          docker logs bridge
+          exit 1

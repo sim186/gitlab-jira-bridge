@@ -1,0 +1,41 @@
+{
+  "name": "gitlab-jira-bridge",
+  "version": "0.5.0",
+  "description": "Turns GitLab merge-request events into Jira labels and comments: needs-review, reviewer-<name>, approved, merged, and a branch-name comment.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sim186/gitlab-jira-bridge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sim186/gitlab-jira-bridge/issues"
+  },
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "bin": {
+    "bridge": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx watch src/cli.ts serve",
+    "start": "node dist/cli.js serve",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "fastify": "^5.2.1",
+    "pino": "^9.6.0",
+    "yaml": "^2.7.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "@types/pino": "^7.0.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}
