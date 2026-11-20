@@ -159,7 +159,9 @@ Subscribe to **Pipeline events** in the webhook settings for this to fire.
    - SSL verification on; it must be HTTPS if exposed beyond localhost.
 3. Create a Jira bot user (or use your own), get its API token at
    `https://id.atlassian.com/manage-profile/security/api-tokens`, and grant it
-   *Browse* + *Add comment* + *Edit issues* on the projects in scope.
+   *Browse* + *Add comment* + *Edit issues* on the projects in scope. Label
+   updates request no notification emails; Jira requires *Administer projects*
+   for each project (or *Administer Jira*) for that request.
 4. Run:
 
 ```bash

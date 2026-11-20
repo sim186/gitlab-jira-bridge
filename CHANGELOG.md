@@ -4,6 +4,13 @@ All notable changes to this project. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- **Quiet label updates.** The bridge requests no Jira notification emails for
+  label changes. The Jira account needs *Administer projects* or *Administer Jira*.
+
 ## [0.5.2] — 2026-11-19
 
 ### Added

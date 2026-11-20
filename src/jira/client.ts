@@ -78,7 +78,7 @@ export class JiraClient {
       return { changed: false, dryRun: false, before: current, after: current };
     }
     const operations = [...toRemove.map((l) => ({ remove: l })), ...toAdd.map((l) => ({ add: l }))];
-    const res = await this.fetchImpl(`${this.api}/issue/${key}`, {
+    const res = await this.fetchImpl(`${this.api}/issue/${key}?notifyUsers=false`, {
       method: 'PUT',
       headers: this.headers,
       body: JSON.stringify({ update: { labels: operations } }),

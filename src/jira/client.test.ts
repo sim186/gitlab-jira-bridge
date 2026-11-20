@@ -32,6 +32,7 @@ describe('JiraClient.applyLabels', () => {
     await client.applyLabels('ABC-1', ['merged'], ['needs-review']);
 
     expect(calls).toHaveLength(2);
+    expect(calls[1]!.url).toBe('https://jira.example.com/rest/api/3/issue/ABC-1?notifyUsers=false');
     // Add/remove operations, never the whole list: a concurrent hand edit survives.
     const put = JSON.parse(calls[1]!.body!) as { update: { labels: unknown[] } };
     expect(put).toEqual({ update: { labels: [{ remove: 'needs-review' }, { add: 'merged' }] } });
