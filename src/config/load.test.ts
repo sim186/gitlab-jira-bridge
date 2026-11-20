@@ -25,6 +25,16 @@ describe('parseConfig', () => {
     });
   });
 
+  it('applies nested defaults for omitted and partially configured sections', () => {
+    const env = { GITLAB_WEBHOOK_SECRET: 's3cret-value', JIRA_API_TOKEN: 'tok' };
+    const config = parseConfig(`${yaml}\nserver:\n  port: 9000\n`, 'c.yaml', env);
+    expect(config.server).toEqual({ host: '127.0.0.1', port: 9000, trust_proxy: false });
+    expect(config.labels.needs_review).toBe('needs-review');
+    expect(config.behaviours.comment_on_open).toBe(true);
+    expect(config.retry.max_attempts).toBe(12);
+    expect(config.missing_key).toEqual({ skip_authors: [], skip_branches: [] });
+  });
+
   it('names the missing variable', () => {
     expect(() => parseConfig(yaml, 'c.yaml', { GITLAB_WEBHOOK_SECRET: 's3cret-value' })).toThrow(
       /jira\.api_token: environment variable JIRA_API_TOKEN/,

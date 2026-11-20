@@ -99,11 +99,11 @@ export const configSchema = z.object({
        */
       trust_proxy: z.boolean().default(false),
     })
-    .default({}),
+    .prefault({}),
   gitlab: gitlabSchema,
   jira: jiraSchema,
-  labels: labelsSchema.default({}),
-  behaviours: behavioursSchema.default({}),
+  labels: labelsSchema.prefault({}),
+  behaviours: behavioursSchema.prefault({}),
   audit: z
     .object({
       /** Append-only record of every delivery and every Jira write it caused. */
@@ -119,7 +119,7 @@ export const configSchema = z.object({
        */
       record_skipped: z.boolean().default(true),
     })
-    .default({}),
+    .prefault({}),
   retry: z
     .object({
       /** Total tries for a transient Jira failure before the action is abandoned. */
@@ -133,7 +133,7 @@ export const configSchema = z.object({
       /** Where `bridge replay` drops requests for the running server to pick up. */
       inbox_dir: z.string().default('./data/inbox'),
     })
-    .default({}),
+    .prefault({}),
   /** MRs that legitimately have no ticket never get the missing-key comment. */
   missing_key: z
     .object({
@@ -142,7 +142,7 @@ export const configSchema = z.object({
       /** Source-branch prefixes, e.g. renovate/, release/. */
       skip_branches: z.array(z.string()).default([]),
     })
-    .default({}),
+    .prefault({}),
   /** JSON file where processed action ids are kept so restarts do not re-fire. */
   state_file: z.string().default('./data/state.json'),
   log_level: z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal']).default('info'),

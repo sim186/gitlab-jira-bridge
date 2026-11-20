@@ -6,6 +6,10 @@ All notable changes to this project. The format follows
 
 ## [Unreleased]
 
+### Security
+
+- **Zod validation.** Updated Zod to address GHSA-mrhx-c7xc-m3w5.
+
 ### Changed
 
 - **Quiet label updates.** The bridge requests no Jira notification emails for
